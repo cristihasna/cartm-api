@@ -4,6 +4,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const rootRouter = require('./src/routes');
 
+mongoose.connect(config.connectionString);
 const app = express();
 
 app.use(bodyParser.json());
