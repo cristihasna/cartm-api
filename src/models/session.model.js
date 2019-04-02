@@ -1,0 +1,33 @@
+const mongoose = require('mongoose');
+
+let sessionSchema = new mongoose.Schema({
+	creationDate: {
+		type: Date,
+		default: Date.now()
+	},
+	participants: {
+		/* array of objects that contains the userEmail and the ammount that the user has paid */
+		type: [
+			{
+				email: { type: String, match: /[A-Za-z][a-zA-Z0-9._]+\@[A-Za-z](\.?[a-zA-Z0-9._]+)+/ },
+				payed: {
+					type: Number,
+					default: 0,
+					min: 0
+				}
+			}
+		],
+		default: []
+	},
+	products: {
+		/* array of objects that contains productId, an array of emails of users that contributed to this product, and the price */
+		type: [ { type: mongoose.Schema.Types.ObjectId, ref: 'ProductInstance' } ],
+		default: []
+	},
+	endDate: {
+		type: Date,
+		default: null
+	}
+});
+
+module.exports = mongoose.model('Session', sessionSchema);

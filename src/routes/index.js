@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const authToken = require('../helpers/firebaseAdmin')
+const { authToken } = require('../helpers/firebaseAdmin');
 
 /*
 * ping route
@@ -14,20 +14,22 @@ router.get('/', (req, res) => {
 	});
 });
 
-
 /*
 * IDToken validation and testing route
 * accepts json that contains 'token' key and verifies the token using firebase admin
 * sends back the result
-*/ 
+*/
+
 router.post('/', (req, res) => {
 	body = req.body;
 	idToken = body.token;
-	authToken(idToken).then((data) =>{
-		res.status(200).json(data);
-	}).catch(err =>{
-		res.status(500).json(err);
-	})
-})
+	authToken(idToken)
+		.then((data) => {
+			res.status(200).json(data);
+		})
+		.catch((err) => {
+			res.status(500).json(err);
+		});
+});
 
 module.exports = router;
