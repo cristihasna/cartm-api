@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 let sessionSchema = new mongoose.Schema({
 	creationDate: {
 		type: Date,
-		default: Date.now()
+		default: Date.now
 	},
 	participants: {
 		/* array of objects that contains the userEmail and the ammount that the user has paid */
@@ -41,7 +41,7 @@ let sessionSchema = new mongoose.Schema({
 sessionSchema.virtual('totalCost').get(function(){
 	let sum = 0;
 	this.products.forEach((element) => {
-		sum += element.price;
+		sum += element.unitPrice;
 	});
 	return sum;
 });

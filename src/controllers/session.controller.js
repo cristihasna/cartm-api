@@ -99,6 +99,39 @@ exports.addUserToSession = async (req, res) => {
 	}
 };
 
+exports.removeUserFromSession = async (req, res) => {
+	const sessionEmail = req.params.sessionEmail;
+	const participantEmail = req.params.userEmail;
+
+	// authenticate user
+	const user = await admin.authIDToken(req.query.token);
+	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
+	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+
+	try {
+		// check if current session exists
+		let currentSession = await findOpenSessionByEmail(sessionEmail);
+		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
+
+		// check if specified participant exists
+		const indexOfParticipant = currentSession.participants.findIndex((value) => value.email === participantEmail);
+		if (indexOfParticipant === -1) return res.status(404).json({ message: ERR_USER_NOT_FOUND });
+
+		currentSession.participants = currentSession.participants
+			.slice(0, indexOfParticipant)
+			.concat(currentSession.participants.slice(indexOfParticipant + 1));
+
+		let result;
+		// check if no other participant remains, in which case to remove the session
+		if (currentSession.participants.length === 0)
+			result = await sessionModel.findByIdAndDelete(currentSession._id).exec();
+		else result = await currentSession.save();
+		res.status(200).json(result);
+	} catch (err) {
+		res.status(500).json(err);
+	}
+};
+
 exports.setUserPayment = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
 	const userEmail = req.params.userEmail;
@@ -132,5 +165,35 @@ exports.setUserPayment = async (req, res) => {
 	} catch (err) {
 		if (err.name === 'ValidationError') res.status(400).json(err);
 		else res.status(500).json(err);
+	}
+};
+
+exports.endSession = async (req, res) => {
+	const token = req.query.token;
+	const sessionEmail = req.params.sessionEmail;
+	const endDate = req.body.endDate || Date.now();
+
+	//authenticate user
+	const user = await admin.authIDToken(token);
+	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
+	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+
+	try {
+		// check if not current session exists for user
+		const currentSession = await findOpenSessionByEmail(sessionEmail);
+		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
+
+		// check if the payment is valid
+		if (currentSession.totalPayed !== currentSession.totalCost)
+			return res.status(400).json({ message: ERR_INVALID_VALUE });
+
+		// end session by setting the endDate
+		currentSession.endDate = endDate;
+		const result = await currentSession.save();
+
+		res.status(200).json(result);
+	} catch (err) {
+		if (err.name === 'ValidationError') res.status(400).json(err);
+		res.status(500).json(err);
 	}
 };

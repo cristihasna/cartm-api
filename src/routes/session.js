@@ -4,7 +4,9 @@ const {
 	createSession,
 	getCurrentSessionForEmail,
 	addUserToSession,
-	setUserPayment
+	setUserPayment,
+	endSession,
+	removeUserFromSession
 } = require('../controllers/session.controller');
 const {
 	addProductToSession,
@@ -21,6 +23,8 @@ router.get('/sessions/:sessionEmail', getCurrentSessionForEmail);
 
 router.post('/sessions/:sessionEmail/create', createSession);
 
+router.post('/sessions/:sessionEmail/end', endSession);
+
 router.post('/sessions/:sessionEmail/products', addProductToSession);
 
 router.patch('/sessions/:sessionEmail/products/:productID', patchProduct);
@@ -35,6 +39,8 @@ router.delete(
 );
 
 router.post('/sessions/:sessionEmail/participants/', addUserToSession);
+
+router.delete('/sessions/:sessionEmail/participants/:userEmail', removeUserFromSession);
 
 router.post('/sessions/:sessionEmail/participants/:userEmail/payment', setUserPayment);
 
