@@ -14,7 +14,16 @@ const findOpenSessionByEmail = (email) => {
 	return sessionModel.findOne({ endDate: null, 'participants.email': email }).populate('products').exec();
 };
 
-exports.getAllSessions = async (req, res) => {
+const getTotalCost = (email, products) => {
+	let totalCost = 0;
+	for (let product of products) {
+		if (product.participants.length > 0 && product.participants.indexOf(email) > -1)
+			totalCost += product.unitPrice * product.quantity / product.participants.length;
+	}
+	return totalCost;
+};
+
+const getAllSessions = async (req, res) => {
 	try {
 		const sessions = await sessionModel.find().exec();
 		res.status(200).json(sessions);
@@ -23,7 +32,7 @@ exports.getAllSessions = async (req, res) => {
 	}
 };
 
-exports.createSession = async (req, res) => {
+const createSession = async (req, res) => {
 	const token = req.query.token;
 	const sessionEmail = req.params.sessionEmail;
 
@@ -48,7 +57,7 @@ exports.createSession = async (req, res) => {
 	}
 };
 
-exports.getCurrentSessionForEmail = async (req, res) => {
+const getCurrentSessionForEmail = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
 	const token = req.query.token;
 
@@ -67,7 +76,7 @@ exports.getCurrentSessionForEmail = async (req, res) => {
 	}
 };
 
-exports.addUserToSession = async (req, res) => {
+const addUserToSession = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
 
 	// authenticate user
@@ -99,7 +108,7 @@ exports.addUserToSession = async (req, res) => {
 	}
 };
 
-exports.removeUserFromSession = async (req, res) => {
+const removeUserFromSession = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
 	const participantEmail = req.params.userEmail;
 
@@ -121,6 +130,21 @@ exports.removeUserFromSession = async (req, res) => {
 			.slice(0, indexOfParticipant)
 			.concat(currentSession.participants.slice(indexOfParticipant + 1));
 
+		// remove participant from every product
+		for (let product of currentSession.products) {
+			const indexOfParticipant = product.participants.indexOf(participantEmail);
+			if (indexOfParticipant > -1) {
+				product.participants = product.participants
+					.slice(0, indexOfParticipant)
+					.concat(product.participants.slice(indexOfParticipant + 1));
+			}
+			await product.save();
+		}
+
+		// recompute each participant debts
+		for (let participant of currentSession.participants)
+			participant.debt = getTotalCost(participant.email, currentSession.products);
+
 		let result;
 		// check if no other participant remains, in which case to remove the session
 		if (currentSession.participants.length === 0)
@@ -132,7 +156,7 @@ exports.removeUserFromSession = async (req, res) => {
 	}
 };
 
-exports.setUserPayment = async (req, res) => {
+const setUserPayment = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
 	const userEmail = req.params.userEmail;
 	const payment = req.body.payment;
@@ -168,7 +192,7 @@ exports.setUserPayment = async (req, res) => {
 	}
 };
 
-exports.endSession = async (req, res) => {
+const endSession = async (req, res) => {
 	const token = req.query.token;
 	const sessionEmail = req.params.sessionEmail;
 	const endDate = req.body.endDate || Date.now();
@@ -196,4 +220,16 @@ exports.endSession = async (req, res) => {
 		if (err.name === 'ValidationError') res.status(400).json(err);
 		res.status(500).json(err);
 	}
+};
+
+module.exports = {
+	findOpenSessionByEmail,
+	getTotalCost,
+	getAllSessions,
+	createSession,
+	getCurrentSessionForEmail,
+	addUserToSession,
+	removeUserFromSession,
+	setUserPayment,
+	endSession
 };

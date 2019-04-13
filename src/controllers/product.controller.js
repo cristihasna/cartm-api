@@ -1,5 +1,5 @@
 const productModel = require('../models/product.model');
-const sessionModel = require('../models/session.model');
+const { findOpenSessionByEmail, getTotalCost } = require('./session.controller');
 const admin = require('../helpers/firebaseAdmin');
 
 const {
@@ -11,10 +11,6 @@ const {
 	ERR_PRODUCT_NOT_FOUND,
 	ERR_PARTICIPANT_EXISTS
 } = require('../helpers/errors');
-
-const findOpenSessionByEmail = (email) => {
-	return sessionModel.findOne({ endDate: null, 'participants.email': email }).populate('products').exec();
-};
 
 exports.addProductToSession = async (req, res) => {
 	const token = req.query.token;
@@ -48,6 +44,14 @@ exports.addProductToSession = async (req, res) => {
 		const newProductObj = new productModel({ barcode, name, participants, quantity, unitPrice });
 		const newProduct = await newProductObj.save();
 		currentSession.products.push(newProduct);
+
+		// add the cost of new product to participants' debt
+		for (let participant of currentSession.participants) {
+			const cost = getTotalCost(participant.email, currentSession.products);
+			console.log(`${participant.email} - ${cost}`);
+			participant.debt = cost;
+		}
+
 		const result = await currentSession.save();
 
 		res.status(200).json(result.populate());
@@ -92,7 +96,11 @@ exports.patchProduct = async (req, res) => {
 			product.participants = req.body.participants;
 		}
 		await product.save();
-		res.status(200).json(await findOpenSessionByEmail(sessionEmail));
+		// recompute participants debt
+		for (let participant of currentSession.participants)
+			participant.debt = getTotalCost(participant.email, currentSession.products);
+		const result = await currentSession.save();
+		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
 	}
@@ -122,8 +130,12 @@ exports.removeProductFromSession = async (req, res) => {
 			.concat(currentSession.products.slice(indexOfProduct + 1));
 
 		await productModel.findByIdAndDelete(productID).exec();
-		const result = await currentSession.save();
 
+		// recompute participants debt
+		for (let participant of currentSession.participants)
+			participant.debt = getTotalCost(participant.email, currentSession.products);
+
+		const result = await currentSession.save();
 		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
@@ -162,8 +174,13 @@ exports.addParticipantToProduct = async (req, res) => {
 		product.participants.push(participant);
 		await product.save();
 
-		// populate again the products list
-		res.status(200).json(await findOpenSessionByEmail(sessionEmail));
+		currentSession = await findOpenSessionByEmail(sessionEmail);
+		// recompute participants debt
+		for (let participant of currentSession.participants)
+			participant.debt = getTotalCost(participant.email, currentSession.products);
+
+		const result = await currentSession.save();
+		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
 	}
@@ -191,8 +208,6 @@ exports.removeParticipantFromProduct = async (req, res) => {
 
 		// check if specified participant exists at current product
 		let product = await productModel.findById(productID).exec();
-		console.log(product.participants);
-		console.log(participant);
 		const indexOfParticipant = product.participants.indexOf(participant);
 		if (indexOfParticipant === -1) return res.status(404).json({ message: ERR_USER_NOT_FOUND });
 
@@ -202,7 +217,12 @@ exports.removeParticipantFromProduct = async (req, res) => {
 			.concat(product.participants.slice(indexOfParticipant + 1));
 
 		await product.save();
-		res.status(200).json(await findOpenSessionByEmail(sessionEmail));
+		// recompute participants debt
+		currentSession = await findOpenSessionByEmail(sessionEmail);
+		for (let participant of currentSession.participants)
+			participant.debt = getTotalCost(participant.email, currentSession.products);
+		const result = await currentSession.save();
+		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
 	}

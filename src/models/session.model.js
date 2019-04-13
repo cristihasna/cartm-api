@@ -17,6 +17,11 @@ let sessionSchema = new mongoose.Schema({
 					type: Number,
 					default: 0,
 					min: 0
+				},
+				debt: {
+					type: Number,
+					min: 0,
+					default: 0
 				}
 			}
 		],
