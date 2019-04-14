@@ -46,7 +46,7 @@ let sessionSchema = new mongoose.Schema({
 sessionSchema.virtual('totalCost').get(function(){
 	let sum = 0;
 	this.products.forEach((element) => {
-		sum += element.unitPrice;
+		sum += element.unitPrice * element.quantity;
 	});
 	return sum;
 });

@@ -1,4 +1,5 @@
 const sessionModel = require('../models/session.model');
+const debtModel = require('../models/debt.model');
 const admin = require('../helpers/firebaseAdmin');
 
 const {
@@ -7,7 +8,8 @@ const {
 	ERR_IDTOKEN,
 	ERR_FORBIDDEN_FOR_USER,
 	ERR_USER_NOT_FOUND,
-	ERR_INVALID_VALUE
+	ERR_INVALID_VALUE,
+	ERR_PAYMENT_INVALID
 } = require('../helpers/errors');
 
 const findOpenSessionByEmail = (email) => {
@@ -21,6 +23,37 @@ const getTotalCost = (email, products) => {
 			totalCost += product.unitPrice * product.quantity / product.participants.length;
 	}
 	return totalCost;
+};
+
+const computeDebts = (participants) => {
+	let totalDebt = 0;
+	let owedParticipants = {};
+	let indebtedParticipants = {};
+	let debts = [];
+
+	// compute totalDebt and the sets of owed and indebted participants
+	for (let p of participants) {
+		if (p.payed > p.debt) {
+			// p has to receive following amount
+			owedParticipants[p.email] = p.payed - p.debt;
+			totalDebt += p.payed - p.debt;
+		} else if (p.payed < p.debt) {
+			// p has to pay following amount
+			indebtedParticipants[p.email] = p.debt - p.payed;
+		}
+	}
+
+	// for every indebted participant create a debt to every owed participant
+	for (let p in indebtedParticipants) {
+		for (let other in owedParticipants) {
+			debts.push({
+				owedBy: p,
+				owedTo: other,
+				amount: owedParticipants[other] / totalDebt * indebtedParticipants[p]
+			});
+		}
+	}
+	return debts;
 };
 
 const getAllSessions = async (req, res) => {
@@ -195,7 +228,7 @@ const setUserPayment = async (req, res) => {
 const endSession = async (req, res) => {
 	const token = req.query.token;
 	const sessionEmail = req.params.sessionEmail;
-	const endDate = req.body.endDate || Date.now();
+	const endDate = Date.parse(req.body.endDate) || Date.now();
 
 	//authenticate user
 	const user = await admin.authIDToken(token);
@@ -209,12 +242,23 @@ const endSession = async (req, res) => {
 
 		// check if the payment is valid
 		if (currentSession.totalPayed !== currentSession.totalCost)
-			return res.status(400).json({ message: ERR_INVALID_VALUE });
+			return res.status(400).json({ message: ERR_PAYMENT_INVALID });
 
+		if (endDate < currentSession.creationDate) return res.status(400).json({ message: ERR_INVALID_VALUE });
+
+		// create debts
+		const debts = computeDebts(currentSession.participants);
+
+		for (let debt of debts) {
+			const newDebt = new debtModel({
+				session: currentSession._id,
+				...debt
+			});
+			await newDebt.save();
+		}
 		// end session by setting the endDate
 		currentSession.endDate = endDate;
 		const result = await currentSession.save();
-
 		res.status(200).json(result);
 	} catch (err) {
 		if (err.name === 'ValidationError') res.status(400).json(err);

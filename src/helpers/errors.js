@@ -7,3 +7,4 @@ exports.ERR_USER_NOT_FOUND = 'Specified user not found, or could not be selectee
 exports.ERR_INVALID_VALUE = 'Invalid value';
 exports.ERR_PRODUCT_NOT_FOUND = 'Specified product not found';
 exports.ERR_PARTICIPANT_EXISTS = 'Specified participant already exists';
+exports.ERR_PAYMENT_INVALID = 'Invalid payment. The amount payed must be equal to the total cost';
