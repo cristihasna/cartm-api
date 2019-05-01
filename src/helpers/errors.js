@@ -1,4 +1,3 @@
-//sessions
 exports.ERR_SESSION_EXISTS = 'An open session already exists for specified user';
 exports.ERR_SESSION_NOT_FOUND = 'No session exists for specified user';
 exports.ERR_IDTOKEN = 'Could not verify IDToken or IDToken invalid';
@@ -8,3 +7,4 @@ exports.ERR_INVALID_VALUE = 'Invalid value';
 exports.ERR_PRODUCT_NOT_FOUND = 'Specified product not found';
 exports.ERR_PARTICIPANT_EXISTS = 'Specified participant already exists';
 exports.ERR_PAYMENT_INVALID = 'Invalid payment. The amount payed must be equal to the total cost';
+exports.ERR_DEBT_NOT_FOUND = 'No debt found for specified ID';
