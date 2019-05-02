@@ -13,6 +13,7 @@ let sessionSchema = new mongoose.Schema({
 					type: String,
 					match: /[A-Za-z][a-zA-Z0-9._]+\@[A-Za-z](\.?[a-zA-Z0-9._]+)+/
 				},
+				profile: Object,
 				payed: {
 					type: Number,
 					default: 0,

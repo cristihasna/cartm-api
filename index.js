@@ -13,11 +13,20 @@ app.use(bodyParser.json());
 
 //basic request logger
 app.use((req, res, next) => {
+	const getFormattedValue = (value) => {
+		if (value.length <= 50) return value;
+		return value.substr(0, 40) + '...' + value.substr(value.length - 7);
+	};
 	console.log('-------------------');
-	console.log(`[${req.method}] ${new Date().toString()} => ${req.originalUrl}`);
-	if (Object.keys(req.body).length > 0) console.log('body:', req.body);
-	if (Object.keys(req.query).length > 0) console.log('query:', req.query);
-	if (Object.keys(req.params).length > 0) console.log('params:', req.params);
+	console.log(`[${req.method}] => ${req.originalUrl.split('?')[0]}\n\t(${new Date().toString()})`);
+	if (Object.keys(req.body).length > 0) {
+		console.log('Body:');
+		for (const key of Object.keys(req.body)) console.log('   ' + key + ' -> ' + getFormattedValue(req.body[key]));
+	}
+	if (Object.keys(req.query).length > 0) {
+		console.log('Query:');
+		for (const key of Object.keys(req.query)) console.log('   ' + key + ' -> ' + getFormattedValue(req.query[key]));
+	}
 	next();
 });
 

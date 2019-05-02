@@ -70,7 +70,7 @@ const createSession = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
 
 	//authenticate user
-	const user = await admin.authIDToken(token);
+	let user = await admin.authIDToken(token);
 	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
 	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
@@ -81,7 +81,12 @@ const createSession = async (req, res) => {
 		// check if not current session exists for user
 		const currentSession = await findOpenSessionByEmail(sessionEmail);
 		if (currentSession) return res.status(400).json({ message: ERR_SESSION_EXISTS });
-
+		user = {
+			displayName: user.displayName,
+			photoURL: user.photoURL,
+			email: user.email
+		}
+		participants[0].profile = user;
 		const session = new sessionModel({ creationDate, participants });
 		const result = await session.save();
 		res.status(201).json(result);
@@ -124,7 +129,7 @@ const addUserToSession = async (req, res) => {
 		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
 
 		// check if other user exists
-		const newUserObj = await admin.getUserByEmail(newUser);
+		let newUserObj = await admin.getUserByEmail(newUser);
 		if (!newUserObj) return res.status(404).json({ message: ERR_USER_NOT_FOUND });
 
 		// check if other user already has an open session
@@ -132,7 +137,12 @@ const addUserToSession = async (req, res) => {
 		if (otherUserSession) return res.status(400).json({ message: ERR_SESSION_EXISTS });
 
 		// add the new participant
-		currentSession.participants.push({ email: newUser, payed: 0 });
+		newUserObj = {
+			displayName: newUserObj.displayName,
+			photoURL: newUserObj.photoURL,
+			email: newUserObj.email
+		}
+		currentSession.participants.push({ email: newUser, payed: 0, profile: newUserObj });
 
 		const result = await currentSession.save();
 		res.status(200).json(result);
