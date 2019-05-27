@@ -1,21 +1,15 @@
 const debtModel = require('../models/debt.model');
-const admin = require('../helpers/firebaseAdmin');
 
 const { 
-	ERR_IDTOKEN,
 	ERR_DEBT_NOT_FOUND, 
 	ERR_FORBIDDEN_FOR_USER,
 	ERR_INVALID_VALUE 
 } = require('../helpers/errors');
 
 const getDebtsByCriteria = async (req, res) => {
-	const token = req.query.token;
 	const startDate = Date.parse(req.query.begin);
 	const endDate = Date.parse(req.query.end);
 
-	//authenticate user
-	const user = await admin.authIDToken(token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
 	let criteria = {};
 	if (startDate) criteria.$gte = startDate;
 	if (endDate) criteria.$lte = endDate;
@@ -33,7 +27,7 @@ const getDebtsByCriteria = async (req, res) => {
 		// get the debts that the user owes
 		const owedBy = await agregate(
 			debtModel.find({
-				owedBy: user.email,
+				owedBy: req.user.email,
 				payed: null
 			})
 		);
@@ -41,7 +35,7 @@ const getDebtsByCriteria = async (req, res) => {
 		// get the debts that the user is being owed
 		const owedTo = await agregate(
 			debtModel.find({
-				owedTo: user.email,
+				owedTo: req.user.email,
 				payed: null
 			})
 		);
@@ -57,19 +51,15 @@ const getDebtsByCriteria = async (req, res) => {
 };
 
 const getDebtByID = async (req, res) => {
-	const token = req.query.token;
 	const debtID = req.params.debtID;
 
-	// auth user
-	const user = await admin.authIDToken(token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
 	try {
 		// find debt by ID
 		const debt = await debtModel.findById(debtID).populate('session').exec();
 		if (!debt) return res.status(404).json({ message: ERR_DEBT_NOT_FOUND });
 
 		// check if authenticated user has access to specified debt
-		if (user.email !== debt.owedBy && user.email !== debt.owedTo)
+		if (req.user.email !== debt.owedBy && req.user.email !== debt.owedTo)
 			return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 		res.status(200).json(debt);
@@ -79,21 +69,16 @@ const getDebtByID = async (req, res) => {
 };
 
 const patchDebt = async (req, res) => {
-	const token = req.query.token;
 	const debtID = req.params.debtID;
 	const newDeadline = Date.parse(req.body.deadline);
 	const payedDate = Date.parse(req.body.payed);
-
-	// auth user
-	const user = await admin.authIDToken(token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
 
 	try {
 		let debt = await debtModel.findById(debtID).populate('session').exec();
 		if (!debt) return res.status(404).json({ message: ERR_DEBT_NOT_FOUND });
 
 		// check if authenticated user is the one being owed
-		if (user.email !== debt.owedTo)
+		if (req.user.email !== debt.owedTo)
 			return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 		// set new deadline

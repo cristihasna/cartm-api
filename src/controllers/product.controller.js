@@ -1,10 +1,8 @@
 const productModel = require('../models/product.model');
 const { findOpenSessionByEmail, getTotalCost } = require('./session.controller');
-const admin = require('../helpers/firebaseAdmin');
 
 const {
 	ERR_SESSION_NOT_FOUND,
-	ERR_IDTOKEN,
 	ERR_FORBIDDEN_FOR_USER,
 	ERR_USER_NOT_FOUND,
 	ERR_INVALID_VALUE,
@@ -13,18 +11,15 @@ const {
 } = require('../helpers/errors');
 
 exports.addProductToSession = async (req, res) => {
-	const token = req.query.token;
 	const sessionEmail = req.params.sessionEmail;
 
 	// authenticate user
-	const user = await admin.authIDToken(token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
-	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 	const barcode = req.body.barcode || null;
 	const name = req.body.name;
 	const quantity = req.body.quantity || 1;
-	const participants = req.body.participants || [ user.email ];
+	const participants = req.body.participants || [ req.user.email ];
 	const unitPrice = req.body.price;
 
 	try {
@@ -61,14 +56,11 @@ exports.addProductToSession = async (req, res) => {
 };
 
 exports.patchProduct = async (req, res) => {
-	const token = req.query.token;
 	const sessionEmail = req.params.sessionEmail;
 	const productID = req.params.productID;
 
 	// authenticate user
-	const user = await admin.authIDToken(token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
-	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 	try {
 		// check if session exists
@@ -107,14 +99,11 @@ exports.patchProduct = async (req, res) => {
 };
 
 exports.removeProductFromSession = async (req, res) => {
-	const token = req.query.token;
 	const sessionEmail = req.params.sessionEmail;
 	const productID = req.params.productID;
 
 	// authenticate user
-	const user = await admin.authIDToken(token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
-	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 	try {
 		// check if session exists
@@ -143,15 +132,12 @@ exports.removeProductFromSession = async (req, res) => {
 };
 
 exports.addParticipantToProduct = async (req, res) => {
-	const token = req.query.token;
 	const sessionEmail = req.params.sessionEmail;
 	const productID = req.params.productID;
 	const participant = req.body.participant;
 
 	// authenticate user
-	const user = await admin.authIDToken(token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
-	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 	try {
 		// check if session exists
@@ -187,15 +173,12 @@ exports.addParticipantToProduct = async (req, res) => {
 };
 
 exports.removeParticipantFromProduct = async (req, res) => {
-	const token = req.query.token;
 	const sessionEmail = req.params.sessionEmail;
 	const productID = req.params.productID;
 	const participant = req.params.participantEmail;
 
 	// authenticate user
-	const user = await admin.authIDToken(token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
-	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 	try {
 		// check if session exists

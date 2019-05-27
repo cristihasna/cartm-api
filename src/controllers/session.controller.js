@@ -5,7 +5,6 @@ const admin = require('../helpers/firebaseAdmin');
 const {
 	ERR_SESSION_EXISTS,
 	ERR_SESSION_NOT_FOUND,
-	ERR_IDTOKEN,
 	ERR_FORBIDDEN_FOR_USER,
 	ERR_USER_NOT_FOUND,
 	ERR_INVALID_VALUE,
@@ -66,12 +65,8 @@ const getAllSessions = async (req, res) => {
 };
 
 const createSession = async (req, res) => {
-	const token = req.query.token;
 	const sessionEmail = req.params.sessionEmail;
-
-	//authenticate user
-	let user = await admin.authIDToken(token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
+	let user = req.user;
 	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 	const creationDate = req.body.creationDate || Date.now();
@@ -97,12 +92,7 @@ const createSession = async (req, res) => {
 
 const getCurrentSessionForEmail = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
-	const token = req.query.token;
-
-	//authenticate user
-	const user = await admin.authIDToken(token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
-	if (user.email !== sessionEmail) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (req.user.email !== sessionEmail) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 	try {
 		const session = await findOpenSessionByEmail(sessionEmail);
@@ -118,9 +108,7 @@ const addUserToSession = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
 
 	// authenticate user
-	const user = await admin.authIDToken(req.query.token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
-	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 	const newUser = req.body.email;
 	try {
@@ -156,9 +144,7 @@ const removeUserFromSession = async (req, res) => {
 	const participantEmail = req.params.userEmail;
 
 	// authenticate user
-	const user = await admin.authIDToken(req.query.token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
-	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 	try {
 		// check if current session exists
@@ -205,9 +191,7 @@ const setUserPayment = async (req, res) => {
 	const payment = req.body.payment;
 
 	// authenticate user
-	const user = await admin.authIDToken(req.query.token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
-	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 	// check if new payment is a valid number
 	if (isNaN(payment)) return res.status(400).json({ message: ERR_INVALID_VALUE });
@@ -236,14 +220,11 @@ const setUserPayment = async (req, res) => {
 };
 
 const endSession = async (req, res) => {
-	const token = req.query.token;
 	const sessionEmail = req.params.sessionEmail;
 	const endDate = Date.parse(req.body.endDate) || Date.now();
 
 	//authenticate user
-	const user = await admin.authIDToken(token);
-	if (!user) return res.status(401).json({ message: ERR_IDTOKEN });
-	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
 
 	try {
 		// check if not current session exists for user
