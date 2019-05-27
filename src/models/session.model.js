@@ -33,7 +33,7 @@ let sessionSchema = new mongoose.Schema({
 		type: [
 			{
 				type: mongoose.Schema.Types.ObjectId,
-				ref: 'Product'
+				ref: 'ProductInstance'
 			}
 		],
 		default: []

@@ -1,41 +1,20 @@
 const mongoose = require('mongoose');
 
 let productSchema = mongoose.Schema({
-	// product ID can be either a barcode or a name
 	barcode: {
 		type: String,
-		required: false,
-		default: null
+		required: false
 	},
 	name: {
 		type: String,
 		required: true
-	},
-	participants: {
-		type: [ String ],
-		required: true
-	},
-	quantity: {
-		type: Number,
-		required: false,
-		default: 1
-	},
-	unitPrice: {
-		type: Number,
-		required: true,
-		min: 0
 	}
 });
 
-productSchema.virtual('totalPrice').get(function() {
-	return this.unitPrice * this.quantity;
-});
-
 productSchema.virtual('openFoodFactsData').get(function() {
-	const barcode = this.product.barcode;
-	if (barcode === null) return null;
 	const productData = {};
-	return fetch(`https://ssl-api.openfoodfacts.org/api/v0/product/${barcode}.json`)
+	if (this.barcode === null) return {};
+	return fetch(`https://ssl-api.openfoodfacts.org/api/v0/product/${this.barcode}.json`)
 		.then((data) => data.json())
 		.then((data) => {
 			if (data.status === 0) return null;
@@ -49,7 +28,7 @@ productSchema.virtual('openFoodFactsData').get(function() {
 		})
 		.catch((err) => {
 			console.log(err);
-			return null;
+			return {};
 		});
 });
 

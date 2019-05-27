@@ -12,7 +12,12 @@ const {
 } = require('../helpers/errors');
 
 const findOpenSessionByEmail = (email) => {
-	return sessionModel.findOne({ endDate: null, 'participants.email': email }).populate('products').exec();
+	return sessionModel.findOne({ endDate: null, 'participants.email': email }).populate({ 
+		path: 'products',
+		populate: {
+			path: 'product'
+		}
+	}).exec();
 };
 
 const getTotalCost = (email, products) => {
@@ -80,7 +85,7 @@ const createSession = async (req, res) => {
 			displayName: user.displayName,
 			photoURL: user.photoURL,
 			email: user.email
-		}
+		};
 		participants[0].profile = user;
 		const session = new sessionModel({ creationDate, participants });
 		const result = await session.save();
@@ -129,7 +134,7 @@ const addUserToSession = async (req, res) => {
 			displayName: newUserObj.displayName,
 			photoURL: newUserObj.photoURL,
 			email: newUserObj.email
-		}
+		};
 		currentSession.participants.push({ email: newUser, payed: 0, profile: newUserObj });
 
 		const result = await currentSession.save();

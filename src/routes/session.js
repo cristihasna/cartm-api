@@ -10,7 +10,7 @@ const {
 } = require('../controllers/session.controller');
 const {
 	addProductToSession,
-	patchProduct,
+	patchProductInstance,
 	removeProductFromSession,
 	addParticipantToProduct,
 	removeParticipantFromProduct
@@ -27,7 +27,7 @@ router.post('/sessions/:sessionEmail/end', endSession);
 
 router.post('/sessions/:sessionEmail/products', addProductToSession);
 
-router.patch('/sessions/:sessionEmail/products/:productID', patchProduct);
+router.patch('/sessions/:sessionEmail/products/:productID', patchProductInstance);
 
 router.delete('/sessions/:sessionEmail/products/:productID', removeProductFromSession);
 
