@@ -72,7 +72,7 @@ const getAllSessions = async (req, res) => {
 const createSession = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
 	let user = req.user;
-	if (sessionEmail !== user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== user.email) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 	const creationDate = req.body.creationDate || Date.now();
 	const participants = [ { email: sessionEmail, payed: 0 } ];
@@ -80,7 +80,7 @@ const createSession = async (req, res) => {
 	try {
 		// check if not current session exists for user
 		const currentSession = await findOpenSessionByEmail(sessionEmail);
-		if (currentSession) return res.status(400).json({ message: ERR_SESSION_EXISTS });
+		if (currentSession) return res.status(400).json(ERR_SESSION_EXISTS);
 		user = {
 			displayName: user.displayName,
 			photoURL: user.photoURL,
@@ -97,7 +97,7 @@ const createSession = async (req, res) => {
 
 const getCurrentSessionForEmail = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
-	if (req.user.email !== sessionEmail) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (req.user.email !== sessionEmail) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 	try {
 		const session = await findOpenSessionByEmail(sessionEmail);
@@ -113,21 +113,21 @@ const addUserToSession = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
 
 	// authenticate user
-	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 	const newUser = req.body.email;
 	try {
 		// check if current session exists
 		let currentSession = await findOpenSessionByEmail(sessionEmail);
-		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
+		if (!currentSession) return res.status(404).json(ERR_SESSION_NOT_FOUND);
 
 		// check if other user exists
 		let newUserObj = await admin.getUserByEmail(newUser);
-		if (!newUserObj) return res.status(404).json({ message: ERR_USER_NOT_FOUND });
+		if (!newUserObj) return res.status(404).json(ERR_USER_NOT_FOUND);
 
 		// check if other user already has an open session
 		let otherUserSession = await findOpenSessionByEmail(newUser);
-		if (otherUserSession) return res.status(400).json({ message: ERR_SESSION_EXISTS });
+		if (otherUserSession) return res.status(400).json(ERR_SESSION_EXISTS);
 
 		// add the new participant
 		newUserObj = {
@@ -149,16 +149,16 @@ const removeUserFromSession = async (req, res) => {
 	const participantEmail = req.params.userEmail;
 
 	// authenticate user
-	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 	try {
 		// check if current session exists
 		let currentSession = await findOpenSessionByEmail(sessionEmail);
-		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
+		if (!currentSession) return res.status(404).json(ERR_SESSION_NOT_FOUND);
 
 		// check if specified participant exists
 		const indexOfParticipant = currentSession.participants.findIndex((value) => value.email === participantEmail);
-		if (indexOfParticipant === -1) return res.status(404).json({ message: ERR_USER_NOT_FOUND });
+		if (indexOfParticipant === -1) return res.status(404).json(ERR_USER_NOT_FOUND);
 
 		currentSession.participants = currentSession.participants
 			.slice(0, indexOfParticipant)
@@ -196,24 +196,24 @@ const setUserPayment = async (req, res) => {
 	const payment = req.body.payment;
 
 	// authenticate user
-	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 	// check if new payment is a valid number
-	if (isNaN(payment)) return res.status(400).json({ message: ERR_INVALID_VALUE });
+	if (isNaN(payment)) return res.status(400).json(ERR_INVALID_VALUE);
 
 	try {
 		// check if current session exists
 		let currentSession = await findOpenSessionByEmail(sessionEmail);
-		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
+		if (!currentSession) return res.status(404).json(ERR_SESSION_NOT_FOUND);
 
 		// check if specified participant is in the session
 		const participant = currentSession.participants.find((value) => value.email === userEmail);
-		if (!participant) return res.status(404).json({ message: ERR_USER_NOT_FOUND });
+		if (!participant) return res.status(404).json(ERR_USER_NOT_FOUND);
 
 		// check if new payment is valid
 		participant.payed = payment;
 		if (currentSession.totalPayed > currentSession.totalCost)
-			return res.status(400).json({ message: ERR_INVALID_VALUE });
+			return res.status(400).json(ERR_INVALID_VALUE);
 
 		// validate payment
 		const result = await currentSession.save();
@@ -229,18 +229,18 @@ const endSession = async (req, res) => {
 	const endDate = Date.parse(req.body.endDate) || Date.now();
 
 	//authenticate user
-	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 	try {
 		// check if not current session exists for user
 		const currentSession = await findOpenSessionByEmail(sessionEmail);
-		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
+		if (!currentSession) return res.status(404).json(ERR_SESSION_NOT_FOUND);
 
 		// check if the payment is valid
 		if (currentSession.totalPayed !== currentSession.totalCost)
-			return res.status(400).json({ message: ERR_PAYMENT_INVALID });
+			return res.status(400).json(ERR_PAYMENT_INVALID);
 
-		if (endDate < currentSession.creationDate) return res.status(400).json({ message: ERR_INVALID_VALUE });
+		if (endDate < currentSession.creationDate) return res.status(400).json(ERR_INVALID_VALUE);
 
 		// create debts
 		const debts = computeDebts(currentSession.participants);

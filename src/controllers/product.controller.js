@@ -23,7 +23,7 @@ exports.addProductToSession = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
 
 	// authenticate user
-	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 	const barcode = req.body.barcode || null;
 	const name = req.body.name;
@@ -34,14 +34,14 @@ exports.addProductToSession = async (req, res) => {
 	try {
 		// check if session exists
 		let currentSession = await findOpenSessionByEmail(sessionEmail);
-		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
+		if (!currentSession) return res.status(404).json(ERR_SESSION_NOT_FOUND);
 
 		// validate participants
 		if (participants && !(participants instanceof Array))
-			return res.status(400).json({ message: ERR_INVALID_VALUE });
+			return res.status(400).json(ERR_INVALID_VALUE);
 		for (participant of participants) {
 			const found = currentSession.participants.find((value) => value.email === participant);
-			if (!found) return res.status(400).json({ message: ERR_USER_NOT_FOUND });
+			if (!found) return res.status(400).json(ERR_USER_NOT_FOUND);
 		}
 		// get product or create one
 		const product = await getProductObj(barcode, name, req.body.productID);
@@ -68,16 +68,16 @@ exports.patchProductInstance = async (req, res) => {
 	const productID = req.params.productID;
 
 	// authenticate user
-	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 	try {
 		// check if session exists
 		let currentSession = await findOpenSessionByEmail(sessionEmail);
-		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
+		if (!currentSession) return res.status(404).json(ERR_SESSION_NOT_FOUND);
 
 		// check if specified product exists in current session
 		const indexOfProduct = currentSession.products.findIndex((value) => value._id == productID);
-		if (indexOfProduct === -1) return res.status(404).json({ message: ERR_PRODUCT_NOT_FOUND });
+		if (indexOfProduct === -1) return res.status(404).json(ERR_PRODUCT_NOT_FOUND);
 
 		let productInstance = await productInstanceModel.findById(productID).exec();
 		if (req.body.quantity) productInstance.quantity = req.body.quantity;
@@ -89,7 +89,7 @@ exports.patchProductInstance = async (req, res) => {
 				const indexOfParticipant = currentSession.participants.findIndex(
 					(value) => value.email === participant
 				);
-				if (indexOfParticipant === -1) return res.status(404).json({ message: ERR_USER_NOT_FOUND });
+				if (indexOfParticipant === -1) return res.status(404).json(ERR_USER_NOT_FOUND);
 			}
 			productInstance.participants = req.body.participants;
 		}
@@ -110,16 +110,16 @@ exports.removeProductFromSession = async (req, res) => {
 	const productID = req.params.productID;
 
 	// authenticate user
-	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 	try {
 		// check if session exists
 		let currentSession = await findOpenSessionByEmail(sessionEmail);
-		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
+		if (!currentSession) return res.status(404).json(ERR_SESSION_NOT_FOUND);
 
 		// check if specified product exists in current session
 		const indexOfProduct = currentSession.products.findIndex((value) => value._id == productID);
-		if (indexOfProduct === -1) return res.status(404).json({ message: ERR_PRODUCT_NOT_FOUND });
+		if (indexOfProduct === -1) return res.status(404).json(ERR_PRODUCT_NOT_FOUND);
 
 		currentSession.products = currentSession.products
 			.slice(0, indexOfProduct)
@@ -144,25 +144,25 @@ exports.addParticipantToProduct = async (req, res) => {
 	const participant = req.body.participant;
 
 	// authenticate user
-	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 	try {
 		// check if session exists
 		let currentSession = await findOpenSessionByEmail(sessionEmail);
-		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
+		if (!currentSession) return res.status(404).json(ERR_SESSION_NOT_FOUND);
 
 		// check if specified product exists in current session
 		const indexOfProduct = currentSession.products.findIndex((value) => value._id == productID);
-		if (indexOfProduct === -1) return res.status(404).json({ message: ERR_PRODUCT_NOT_FOUND });
+		if (indexOfProduct === -1) return res.status(404).json(ERR_PRODUCT_NOT_FOUND);
 
 		// check if specified participant already exists at current product
 		let product = await productInstanceModel.findById(productID).exec();
 		if (product.participants.indexOf(participant) > -1)
-			return res.status(400).json({ message: ERR_PARTICIPANT_EXISTS });
+			return res.status(400).json(ERR_PARTICIPANT_EXISTS);
 
 		// check if participant is valid
 		const userIndex = currentSession.participants.findIndex((value) => value.email === participant);
-		if (userIndex === -1) return res.status(404).json({ message: ERR_USER_NOT_FOUND });
+		if (userIndex === -1) return res.status(404).json(ERR_USER_NOT_FOUND);
 
 		product.participants.push(participant);
 		await product.save();
@@ -185,21 +185,21 @@ exports.removeParticipantFromProduct = async (req, res) => {
 	const participant = req.params.participantEmail;
 
 	// authenticate user
-	if (sessionEmail !== req.user.email) return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+	if (sessionEmail !== req.user.email) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 	try {
 		// check if session exists
 		let currentSession = await findOpenSessionByEmail(sessionEmail);
-		if (!currentSession) return res.status(404).json({ message: ERR_SESSION_NOT_FOUND });
+		if (!currentSession) return res.status(404).json(ERR_SESSION_NOT_FOUND);
 
 		// check if specified product exists in current session
 		const indexOfProduct = currentSession.products.findIndex((value) => value._id == productID);
-		if (indexOfProduct === -1) return res.status(404).json({ message: ERR_PRODUCT_NOT_FOUND });
+		if (indexOfProduct === -1) return res.status(404).json(ERR_PRODUCT_NOT_FOUND);
 
 		// check if specified participant exists at current product
 		let product = await productInstanceModel.findById(productID).exec();
 		const indexOfParticipant = product.participants.indexOf(participant);
-		if (indexOfParticipant === -1) return res.status(404).json({ message: ERR_USER_NOT_FOUND });
+		if (indexOfParticipant === -1) return res.status(404).json(ERR_USER_NOT_FOUND);
 
 		// remove participant
 		product.participants = product.participants

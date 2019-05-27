@@ -56,11 +56,11 @@ const getDebtByID = async (req, res) => {
 	try {
 		// find debt by ID
 		const debt = await debtModel.findById(debtID).populate('session').exec();
-		if (!debt) return res.status(404).json({ message: ERR_DEBT_NOT_FOUND });
+		if (!debt) return res.status(404).json(ERR_DEBT_NOT_FOUND);
 
 		// check if authenticated user has access to specified debt
 		if (req.user.email !== debt.owedBy && req.user.email !== debt.owedTo)
-			return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+			return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 		res.status(200).json(debt);
 	} catch (err) {
@@ -75,21 +75,21 @@ const patchDebt = async (req, res) => {
 
 	try {
 		let debt = await debtModel.findById(debtID).populate('session').exec();
-		if (!debt) return res.status(404).json({ message: ERR_DEBT_NOT_FOUND });
+		if (!debt) return res.status(404).json(ERR_DEBT_NOT_FOUND);
 
 		// check if authenticated user is the one being owed
 		if (req.user.email !== debt.owedTo)
-			return res.status(403).json({ message: ERR_FORBIDDEN_FOR_USER });
+			return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
 		// set new deadline
 		if (newDeadline) {
 			if (newDeadline > Date.now()) debt.deadline = newDeadline;
-			else return res.status(400).json({ message: ERR_INVALID_VALUE });
+			else return res.status(400).json(ERR_INVALID_VALUE);
 		}
 		// set pay date 
 		if (payedDate) {
 			if (payedDate <= Date.now()) debt.payed = payedDate;
-			else return res.status(400).json({ message: ERR_INVALID_VALUE });
+			else return res.status(400).json(ERR_INVALID_VALUE);
 		}
 		await debt.save();
 		res.status(200).json(debt);
