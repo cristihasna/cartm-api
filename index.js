@@ -1,4 +1,3 @@
-const config = require('./config.json');
 const mongoose = require('mongoose');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -8,7 +7,10 @@ const debtRouter = require('./src/routes/debt');
 const admin = require('./src/helpers/firebaseAdmin');
 const { ERR_IDTOKEN } = require('./src/helpers/errors');
 
-mongoose.connect(config.connectionString, { useNewUrlParser: true });
+// environment variables
+require('dotenv').config();
+
+mongoose.connect(process.env.CONNECTION_STRING, { useNewUrlParser: true });
 const app = express();
 
 app.use(bodyParser.json());
@@ -53,5 +55,5 @@ app.use(rootRouter);
 app.use(sessionRouter);
 app.use(debtRouter);
 
-const port = process.env.PORT || config.port || 3000;
+const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`server started on ${port}`));
