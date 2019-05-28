@@ -1,5 +1,5 @@
-const sessionModel = require('../models/session.model');
-const debtModel = require('../models/debt.model');
+const SessionModel = require('../models/session.model');
+const DebtModel = require('../models/debt.model');
 const admin = require('../helpers/firebaseAdmin');
 
 const {
@@ -12,7 +12,7 @@ const {
 } = require('../helpers/errors');
 
 const findOpenSessionByEmail = (email) => {
-	return sessionModel.findOne({ endDate: null, 'participants.email': email }).populate({ 
+	return SessionModel.findOne({ endDate: null, 'participants.email': email }).populate({ 
 		path: 'products',
 		populate: {
 			path: 'product'
@@ -62,7 +62,7 @@ const computeDebts = (participants) => {
 
 const getAllSessions = async (req, res) => {
 	try {
-		const sessions = await sessionModel.find().exec();
+		const sessions = await SessionModel.find().exec();
 		res.status(200).json(sessions);
 	} catch (err) {
 		res.status(500).json(err);
@@ -87,7 +87,7 @@ const createSession = async (req, res) => {
 			email: user.email
 		};
 		participants[0].profile = user;
-		const session = new sessionModel({ creationDate, participants });
+		const session = new SessionModel({ creationDate, participants });
 		const result = await session.save();
 		res.status(201).json(result);
 	} catch (err) {
@@ -182,7 +182,7 @@ const removeUserFromSession = async (req, res) => {
 		let result;
 		// check if no other participant remains, in which case to remove the session
 		if (currentSession.participants.length === 0)
-			result = await sessionModel.findByIdAndDelete(currentSession._id).exec();
+			result = await SessionModel.findByIdAndDelete(currentSession._id).exec();
 		else result = await currentSession.save();
 		res.status(200).json(result);
 	} catch (err) {
@@ -246,7 +246,7 @@ const endSession = async (req, res) => {
 		const debts = computeDebts(currentSession.participants);
 
 		for (let debt of debts) {
-			const newDebt = new debtModel({
+			const newDebt = new DebtModel({
 				session: currentSession._id,
 				...debt
 			});

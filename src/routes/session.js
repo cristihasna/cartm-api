@@ -13,7 +13,9 @@ const {
 	patchProductInstance,
 	removeProductFromSession,
 	addParticipantToProduct,
-	removeParticipantFromProduct
+	removeParticipantFromProduct,
+	searchProductByName,
+	getProductByID
 } = require('../controllers/product.controller');
 const router = express.Router();
 
@@ -43,5 +45,9 @@ router.post('/sessions/:sessionEmail/participants/', addUserToSession);
 router.delete('/sessions/:sessionEmail/participants/:userEmail', removeUserFromSession);
 
 router.post('/sessions/:sessionEmail/participants/:userEmail/payment', setUserPayment);
+
+router.get('/products', searchProductByName);
+
+router.get('/products/:productID', getProductByID);
 
 module.exports = router;

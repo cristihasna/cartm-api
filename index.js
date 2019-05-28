@@ -24,6 +24,10 @@ app.use((req, res, next) => {
 	};
 	console.log('-------------------');
 	console.log(`[${req.method}] => ${req.originalUrl.split('?')[0]}\n\t(${new Date().toString()})`);
+	if (Object.keys(req.headers).length > 0) {
+		console.log('Headers:');
+		for (const key of Object.keys(req.headers)) console.log('   ' + key + ' -> ' + getFormattedValue(req.headers[key]));
+	}
 	if (Object.keys(req.body).length > 0) {
 		console.log('Body:');
 		for (const key of Object.keys(req.body)) console.log('   ' + key + ' -> ' + getFormattedValue(req.body[key]));

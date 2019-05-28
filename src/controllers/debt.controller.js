@@ -1,4 +1,4 @@
-const debtModel = require('../models/debt.model');
+const DebtModel = require('../models/debt.model');
 
 const { 
 	ERR_DEBT_NOT_FOUND, 
@@ -26,7 +26,7 @@ const getDebtsByCriteria = async (req, res) => {
 	try {
 		// get the debts that the user owes
 		const owedBy = await agregate(
-			debtModel.find({
+			DebtModel.find({
 				owedBy: req.user.email,
 				payed: null
 			})
@@ -34,7 +34,7 @@ const getDebtsByCriteria = async (req, res) => {
 
 		// get the debts that the user is being owed
 		const owedTo = await agregate(
-			debtModel.find({
+			DebtModel.find({
 				owedTo: req.user.email,
 				payed: null
 			})
@@ -55,7 +55,7 @@ const getDebtByID = async (req, res) => {
 
 	try {
 		// find debt by ID
-		const debt = await debtModel.findById(debtID).populate('session').exec();
+		const debt = await DebtModel.findById(debtID).populate('session').exec();
 		if (!debt) return res.status(404).json(ERR_DEBT_NOT_FOUND);
 
 		// check if authenticated user has access to specified debt
@@ -74,7 +74,7 @@ const patchDebt = async (req, res) => {
 	const payedDate = Date.parse(req.body.payed);
 
 	try {
-		let debt = await debtModel.findById(debtID).populate('session').exec();
+		let debt = await DebtModel.findById(debtID).populate('session').exec();
 		if (!debt) return res.status(404).json(ERR_DEBT_NOT_FOUND);
 
 		// check if authenticated user is the one being owed
