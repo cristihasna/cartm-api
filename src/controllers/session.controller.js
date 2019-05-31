@@ -262,6 +262,16 @@ const endSession = async (req, res) => {
 	}
 };
 
+const queryUsers = async (req, res) => {
+	const query = req.query.q;
+	try{
+		const users = await admin.queryUsers(query);
+		return res.status(200).json(users);
+	} catch (e){
+		return res.status(500).json(e);
+	}
+}
+
 module.exports = {
 	findOpenSessionByEmail,
 	getTotalCost,
@@ -271,5 +281,6 @@ module.exports = {
 	addUserToSession,
 	removeUserFromSession,
 	setUserPayment,
-	endSession
+	endSession,
+	queryUsers
 };

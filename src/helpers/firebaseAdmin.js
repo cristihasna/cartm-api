@@ -47,4 +47,45 @@ const getUserByEmail = async (email) => {
 	}
 };
 
-module.exports = { authIDToken, getUserByEmail };
+const queryUsers = async (query) => {
+	let regex;
+	try {
+		regex = new RegExp(query.replace(/\s/g, '.'), 'i');
+	} catch (e) {
+		return Promise.resolve([]);
+	}
+	return new Promise((resolve, reject) => {
+		const listAllUsers = async (nextPageToken, users = []) => {
+			// List batch of users, 1000 at a time.
+			try {
+				let found = [];
+				let listUsersResult = await admin.auth().listUsers(1000, nextPageToken);
+				listUsersResult.users.forEach((userRecord) => {
+					// check if the display name or email matches the query
+					const displayNameTest = regex.test(userRecord.displayName);
+					const emailTest = regex.test(userRecord.email);
+					if (displayNameTest || emailTest)
+						found.push({
+							displayName: userRecord.displayName,
+							email: userRecord.email,
+							photoURL: userRecord.photoURL
+						});
+					if (users.length + found.length > (parseInt(process.env.MAX_USERS_RESULT) || 10))
+						resolve(users.concat(found));
+				});
+				if (listUsersResult.pageToken) {
+					listAllUsers(listUsersResult.pageToken, users.concat(found));
+				} else {
+					resolve(users);
+				}
+			} catch (e) {
+				console.log(e);
+				reject(e);
+			}
+		};
+		// Start listing users from the beginning, 1000 at a time.
+		listAllUsers();
+	});
+};
+
+module.exports = { authIDToken, getUserByEmail, queryUsers };

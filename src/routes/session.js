@@ -6,7 +6,8 @@ const {
 	addUserToSession,
 	setUserPayment,
 	endSession,
-	removeUserFromSession
+	removeUserFromSession,
+	queryUsers
 } = require('../controllers/session.controller');
 const {
 	addProductToSession,
@@ -49,5 +50,7 @@ router.post('/sessions/:sessionEmail/participants/:userEmail/payment', setUserPa
 router.get('/products', searchProductByName);
 
 router.get('/products/:productID', getProductByID);
+
+router.get('/users', queryUsers);
 
 module.exports = router;
