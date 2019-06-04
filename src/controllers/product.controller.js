@@ -218,19 +218,17 @@ exports.removeParticipantFromProduct = async (req, res) => {
 
 exports.searchProductByName = async (req, res) => {
 	// check if the query string is empty
-	if (!req.query.name) return res.status(200).json([]);
+	if (!req.query.name) return res.status(200).json(null);
 	const query = decodeURIComponent(req.query.name);
 
 	try {
 		let regex = new RegExp(query, 'i');
 		// const results = await ProductModel.find({ name: regex }).exec();
-		const results = await ProductInstanceModel.find()
-			.populate('product')
-			.find({ 'product.name': regex }, 'product._id product.name product.barcode unitPrice quantity')
-			.exec();
-		return res.status(200).json(results);
+		const product = await ProductModel.findOne({ name: regex }).exec();
+		const productInstance = await ProductInstanceModel.findOne({ product: product._id }, 'product unitPrice').populate('product').exec();
+		return res.status(200).json(productInstance);
 	} catch (e) {
-		return res.status(200).json([]);
+		return res.status(200).json(null);
 	}
 };
 
