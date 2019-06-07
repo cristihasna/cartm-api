@@ -225,7 +225,7 @@ exports.searchProductByName = async (req, res) => {
 		let regex = new RegExp(query, 'i');
 		// const results = await ProductModel.find({ name: regex }).exec();
 		const product = await ProductModel.findOne({ name: regex }).exec();
-		const productInstance = await ProductInstanceModel.findOne({ product: product._id }, 'product unitPrice').populate('product').exec();
+		const productInstance = await ProductInstanceModel.findOne({ product: product._id }, 'product unitPrice').sort('-_id').populate('product').exec();
 		return res.status(200).json(productInstance);
 	} catch (e) {
 		return res.status(200).json(null);
@@ -243,7 +243,6 @@ exports.getProductByID = async (req, res) => {
 		const additionalInfo = await ProductInstanceModel.findOne({ product: productID }, 'unitPrice quantity').exec();
 		return res.status(200).json(Object.assign(product, additionalInfo));
 	} catch (err) {
-		console.log(err);
 		return res.status(500).json(err);
 	}
 };

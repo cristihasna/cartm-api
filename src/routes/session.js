@@ -9,15 +9,6 @@ const {
 	removeUserFromSession,
 	queryUsers
 } = require('../controllers/session.controller');
-const {
-	addProductToSession,
-	patchProductInstance,
-	removeProductFromSession,
-	addParticipantToProduct,
-	removeParticipantFromProduct,
-	searchProductByName,
-	getProductByID
-} = require('../controllers/product.controller');
 const router = express.Router();
 
 router.get('/sessions/', getAllSessions);
@@ -28,28 +19,11 @@ router.post('/sessions/:sessionEmail/create', createSession);
 
 router.post('/sessions/:sessionEmail/end', endSession);
 
-router.post('/sessions/:sessionEmail/products', addProductToSession);
-
-router.patch('/sessions/:sessionEmail/products/:productID', patchProductInstance);
-
-router.delete('/sessions/:sessionEmail/products/:productID', removeProductFromSession);
-
-router.post('/sessions/:sessionEmail/products/:productID/participants/', addParticipantToProduct);
-
-router.delete(
-	'/sessions/:sessionEmail/products/:productID/participants/:participantEmail',
-	removeParticipantFromProduct
-);
-
 router.post('/sessions/:sessionEmail/participants/', addUserToSession);
 
 router.delete('/sessions/:sessionEmail/participants/:userEmail', removeUserFromSession);
 
 router.post('/sessions/:sessionEmail/participants/:userEmail/payment', setUserPayment);
-
-router.get('/products', searchProductByName);
-
-router.get('/products/:productID', getProductByID);
 
 router.get('/users', queryUsers);
 

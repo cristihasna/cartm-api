@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const rootRouter = require('./src/routes');
 const sessionRouter = require('./src/routes/session');
+const productRouter = require('./src/routes/product');
 const debtRouter = require('./src/routes/debt');
 const admin = require('./src/helpers/firebaseAdmin');
 const { ERR_IDTOKEN } = require('./src/helpers/errors');
@@ -57,6 +58,7 @@ app.use(async (req, res, next) => {
 
 app.use(rootRouter);
 app.use(sessionRouter);
+app.use(productRouter);
 app.use(debtRouter);
 
 const port = process.env.PORT || 3000;
