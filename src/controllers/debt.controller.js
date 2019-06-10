@@ -1,10 +1,6 @@
 const DebtModel = require('../models/debt.model');
 
-const { 
-	ERR_DEBT_NOT_FOUND, 
-	ERR_FORBIDDEN_FOR_USER,
-	ERR_INVALID_VALUE 
-} = require('../helpers/errors');
+const { ERR_DEBT_NOT_FOUND, ERR_FORBIDDEN_FOR_USER, ERR_INVALID_VALUE } = require('../helpers/errors');
 
 const getDebtsByCriteria = async (req, res) => {
 	const startDate = Date.parse(req.query.begin);
@@ -18,6 +14,12 @@ const getDebtsByCriteria = async (req, res) => {
 	const agregate = (query) =>
 		query.populate({
 			path: 'session',
+			populate: {
+				path: 'products',
+				populate: {
+					path: 'product'
+				}
+			},
 			match: {
 				...(Object.keys(criteria).length > 0 ? { creationDate: criteria } : null)
 			}
@@ -40,10 +42,23 @@ const getDebtsByCriteria = async (req, res) => {
 			})
 		);
 
+		const getUserFromSession = (session, email) => {
+			const user = session.participants.find((participant) => participant.email === email);
+			return user.profile;
+		};
+
 		// filter the results where no session object is found (matches no criteria)
 		res.status(200).json({
-			owedBy: owedBy.filter((debt) => debt.session !== null),
-			owedTo: owedTo.filter((debt) => debt.session !== null)
+			owedBy: owedBy.filter((debt) => debt.session !== null).map((debt) => {
+				const owedTo = getUserFromSession(debt.session, debt.owedTo);
+				const owedBy = getUserFromSession(debt.session, debt.owedBy);
+				return Object.assign({}, debt.toJSON(), { owedBy, owedTo });
+			}),
+			owedTo: owedTo.filter((debt) => debt.session !== null).map((debt) => {
+				const owedTo = getUserFromSession(debt.session, debt.owedTo);
+				const owedBy = getUserFromSession(debt.session, debt.owedBy);
+				return Object.assign({}, debt.toJSON(), { owedBy, owedTo });
+			}),
 		});
 	} catch (err) {
 		res.status(500).json(err);
@@ -78,15 +93,16 @@ const patchDebt = async (req, res) => {
 		if (!debt) return res.status(404).json(ERR_DEBT_NOT_FOUND);
 
 		// check if authenticated user is the one being owed
-		if (req.user.email !== debt.owedTo)
-			return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
+		if (req.user.email !== debt.owedTo) return res.status(403).json(ERR_FORBIDDEN_FOR_USER);
 
+		// if new deadline is new from the request body, remove the deadline
+		if (req.body.deadline === null) debt.deadline = null;
 		// set new deadline
 		if (newDeadline) {
 			if (newDeadline > Date.now()) debt.deadline = newDeadline;
 			else return res.status(400).json(ERR_INVALID_VALUE);
 		}
-		// set pay date 
+		// set pay date
 		if (payedDate) {
 			if (payedDate <= Date.now()) debt.payed = payedDate;
 			else return res.status(400).json(ERR_INVALID_VALUE);

@@ -5,6 +5,7 @@ const rootRouter = require('./src/routes');
 const sessionRouter = require('./src/routes/session');
 const productRouter = require('./src/routes/product');
 const debtRouter = require('./src/routes/debt');
+const historyRouter = require('./src/routes/history');
 const admin = require('./src/helpers/firebaseAdmin');
 const { ERR_IDTOKEN } = require('./src/helpers/errors');
 
@@ -19,6 +20,7 @@ app.use(bodyParser.json());
 // basic request logger
 app.use((req, res, next) => {
 	const getFormattedValue = (value) => {
+		if (value === null) return null;
 		value = value.toString();
 		if (value.length <= 50) return value;
 		return value.substr(0, 40) + '...' + value.substr(value.length - 7);
@@ -60,6 +62,7 @@ app.use(rootRouter);
 app.use(sessionRouter);
 app.use(productRouter);
 app.use(debtRouter);
+app.use(historyRouter);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`server started on ${port}`));
