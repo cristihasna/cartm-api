@@ -6,6 +6,7 @@ const sessionRouter = require('./src/routes/session');
 const productRouter = require('./src/routes/product');
 const debtRouter = require('./src/routes/debt');
 const historyRouter = require('./src/routes/history');
+const deviceRouter = require('./src/routes/device');
 const admin = require('./src/helpers/firebaseAdmin');
 const { ERR_IDTOKEN } = require('./src/helpers/errors');
 
@@ -63,6 +64,7 @@ app.use(sessionRouter);
 app.use(productRouter);
 app.use(debtRouter);
 app.use(historyRouter);
+app.use(deviceRouter);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`server started on ${port}`));

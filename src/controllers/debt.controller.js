@@ -1,6 +1,50 @@
 const DebtModel = require('../models/debt.model');
+const DeviceModel = require('../models/device.model');
+const { sendNotification } = require('../helpers/firebaseAdmin');
 
 const { ERR_DEBT_NOT_FOUND, ERR_FORBIDDEN_FOR_USER, ERR_INVALID_VALUE } = require('../helpers/errors');
+
+const sendNotificationToUser = async (sender, receiver, deadline) => {
+	try {
+		let displayName = sender.displayName;
+		if (!displayName) {
+			let emailID = sender.email.split('@')[0];
+			emailID = emailID.replace(/[0-9]+/, '');
+			const emailComponents = emailID.split(/[._]/);
+			let name = emailComponents[0].slice(0, 1).toUpperCase() + emailComponents[0].slice(1).toLowerCase();
+
+			if (emailComponents.length > 1)
+				name += ' ' + emailComponents[1].slice(0, 1).toUpperCase() + emailComponents[1].slice(1).toLowerCase();
+			displayName = name;
+		}
+
+		const date = new Date(deadline);
+		const now = new Date();
+		const day = date.getDate() < 10 ? '0' + date.getDate() : date.getDate();
+		const month = [ 'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC' ][
+			date.getMonth()
+		];
+		const year = date.getFullYear();
+		let timeline = `${day} - ${month} - ${year}`;
+		if (now.getFullYear() === date.getFullYear() && now.getMonth() === date.getMonth()) {
+			if (date.getDate() - now.getDate() === 1) timeline = 'tomorow';
+		}
+
+		const deviceAssoc = await DeviceModel.findOne({ userEmail: receiver }).exec();
+		
+		// if the user doesn't have a registrationToken associated return
+		if (!deviceAssoc) return;
+
+		const registrationToken = deviceAssoc.registrationToken;
+		const notification = {
+			title: 'Payment deadline',
+			body: `${displayName} wants you to pay until ${timeline}`
+		};
+		await sendNotification(registrationToken, notification);
+	} catch (e) {
+		console.log(e);
+	}
+};
 
 const getDebtsByCriteria = async (req, res) => {
 	const startDate = Date.parse(req.query.begin);
@@ -58,9 +102,10 @@ const getDebtsByCriteria = async (req, res) => {
 				const owedTo = getUserFromSession(debt.session, debt.owedTo);
 				const owedBy = getUserFromSession(debt.session, debt.owedBy);
 				return Object.assign({}, debt.toJSON(), { owedBy, owedTo });
-			}),
+			})
 		});
 	} catch (err) {
+		console.log(err);
 		res.status(500).json(err);
 	}
 };
@@ -99,8 +144,10 @@ const patchDebt = async (req, res) => {
 		if (req.body.deadline === null) debt.deadline = null;
 		// set new deadline
 		if (newDeadline) {
-			if (newDeadline > Date.now()) debt.deadline = newDeadline;
-			else return res.status(400).json(ERR_INVALID_VALUE);
+			if (newDeadline > Date.now()) {
+				debt.deadline = newDeadline;
+				await sendNotificationToUser(req.user, debt.owedBy, debt.deadline);
+			} else return res.status(400).json(ERR_INVALID_VALUE);
 		}
 		// set pay date
 		if (payedDate) {
@@ -110,6 +157,7 @@ const patchDebt = async (req, res) => {
 		await debt.save();
 		res.status(200).json(debt);
 	} catch (err) {
+		console.log(err);
 		res.status(500).json(err);
 	}
 };

@@ -39,6 +39,19 @@ const authIDToken = async (IDToken) => {
 	}
 };
 
+const sendNotification = async (registrationToken, notification) => {
+	const message = {
+		token: registrationToken,
+		notification,
+		android: {
+			notification: {
+				sound: 'default'
+			}
+		}
+	};
+	await admin.messaging().send(message);
+};
+
 const getUserByEmail = async (email) => {
 	try {
 		return await admin.auth().getUserByEmail(email);
@@ -88,4 +101,4 @@ const queryUsers = async (query) => {
 	});
 };
 
-module.exports = { authIDToken, getUserByEmail, queryUsers };
+module.exports = { authIDToken, getUserByEmail, queryUsers, sendNotification };
