@@ -1,14 +1,12 @@
 const mongoose = require('mongoose');
 const express = require('express');
 const bodyParser = require('body-parser');
-const rootRouter = require('./src/routes');
-const sessionRouter = require('./src/routes/session');
-const productRouter = require('./src/routes/product');
-const debtRouter = require('./src/routes/debt');
-const historyRouter = require('./src/routes/history');
-const deviceRouter = require('./src/routes/device');
+const { rootRouter, debtRouter, deviceRouter, historyRouter, productRouter, sessionRouter } = require('./src/routes');
 const admin = require('./src/helpers/firebaseAdmin');
+const logger = require('./src/helpers/logger');
 const { ERR_IDTOKEN } = require('./src/helpers/errors');
+const WebSocket = require('ws');
+const http = require('http');
 
 // environment variables
 require('dotenv').config();
@@ -19,29 +17,7 @@ const app = express();
 app.use(bodyParser.json());
 
 // basic request logger
-app.use((req, res, next) => {
-	const getFormattedValue = (value) => {
-		if (value === null) return null;
-		value = value.toString();
-		if (value.length <= 50) return value;
-		return value.substr(0, 40) + '...' + value.substr(value.length - 7);
-	};
-	console.log('-------------------');
-	console.log(`[${req.method}] => ${req.originalUrl.split('?')[0]}\n\t(${new Date().toString()})`);
-	if (Object.keys(req.headers).length > 0) {
-		console.log('Headers:');
-		for (const key of Object.keys(req.headers)) console.log('   ' + key + ' -> ' + getFormattedValue(req.headers[key]));
-	}
-	if (Object.keys(req.body).length > 0) {
-		console.log('Body:');
-		for (const key of Object.keys(req.body)) console.log('   ' + key + ' -> ' + getFormattedValue(req.body[key]));
-	}
-	if (Object.keys(req.query).length > 0) {
-		console.log('Query:');
-		for (const key of Object.keys(req.query)) console.log('   ' + key + ' -> ' + getFormattedValue(req.query[key]));
-	}
-	next();
-});
+app.use(logger);
 
 // IDToken authentification
 app.use(async (req, res, next) => {
@@ -55,16 +31,35 @@ app.use(async (req, res, next) => {
 
 	// save new user property in request object
 	req.user = user;
-	
+
 	next();
 });
 
-app.use(rootRouter);
-app.use(sessionRouter);
-app.use(productRouter);
-app.use(debtRouter);
-app.use(historyRouter);
-app.use(deviceRouter);
+// make use of the API routers
+app.use(rootRouter, sessionRouter, productRouter, debtRouter, historyRouter, deviceRouter);
+
+// initialize server
+const server = http.createServer(app);
+
+let users = {};
+
+// initialize web-socket
+const wss = new WebSocket.Server({ server });
+wss.on('connection', (ws) => {
+	let user;
+	ws.on('message', async (IDToken) => {
+		user = await admin.authIDToken(IDToken);
+		if (user) users[user.email] = ws;
+		console.log(users);
+	});
+	ws.on('close', (code, reason) => {
+		if (user) {
+			console.log('closing for', user.email);
+			delete users[user.email];
+			console.log(users);
+		}
+	});
+});
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`server started on ${port}`));
+server.listen(port, () => console.log(`server started on ${port}`));

@@ -39,10 +39,11 @@ const authIDToken = async (IDToken) => {
 	}
 };
 
-const sendNotification = async (registrationToken, notification) => {
+const sendNotification = async (registrationToken, notification, data) => {
 	const message = {
 		token: registrationToken,
 		notification,
+		data,
 		android: {
 			notification: {
 				sound: 'default'

@@ -1,4 +1,5 @@
 const SessionModel = require('../models/session.model');
+const DeviceModel = require('../models/device.model');
 const DebtModel = require('../models/debt.model');
 const admin = require('../helpers/firebaseAdmin');
 
@@ -12,12 +13,14 @@ const {
 } = require('../helpers/errors');
 
 const findOpenSessionByEmail = (email) => {
-	return SessionModel.findOne({ endDate: null, 'participants.email': email }).populate({ 
-		path: 'products',
-		populate: {
-			path: 'product'
-		}
-	}).exec();
+	return SessionModel.findOne({ endDate: null, 'participants.email': email })
+		.populate({
+			path: 'products',
+			populate: {
+				path: 'product'
+			}
+		})
+		.exec();
 };
 
 const getTotalCost = (email, products) => {
@@ -27,6 +30,35 @@ const getTotalCost = (email, products) => {
 			totalCost += product.unitPrice * product.quantity / product.participants.length;
 	}
 	return totalCost;
+};
+
+const sendNotificationToUser = async (sender, receiver) => {
+	try {
+		let displayName = sender.displayName;
+		if (!displayName) {
+			let emailID = sender.email.split('@')[0];
+			emailID = emailID.replace(/[0-9]+/, '');
+			const emailComponents = emailID.split(/[._]/);
+			let name = emailComponents[0].slice(0, 1).toUpperCase() + emailComponents[0].slice(1).toLowerCase();
+
+			if (emailComponents.length > 1)
+				name += ' ' + emailComponents[1].slice(0, 1).toUpperCase() + emailComponents[1].slice(1).toLowerCase();
+			displayName = name;
+		}
+		const deviceAssoc = await DeviceModel.findOne({ userEmail: receiver }).exec();
+
+		// if the user doesn't have a registrationToken associated return
+		if (!deviceAssoc) return;
+
+		const registrationToken = deviceAssoc.registrationToken;
+		const notification = {
+			title: 'New shopping session',
+			body: `${displayName} just added you on his shopping session.`
+		};
+		await admin.sendNotification(registrationToken, notification, { screen: 'session' });
+	} catch (e) {
+		console.log(e);
+	}
 };
 
 const computeDebts = (participants) => {
@@ -136,8 +168,8 @@ const addUserToSession = async (req, res) => {
 			email: newUserObj.email
 		};
 		currentSession.participants.push({ email: newUser, payed: 0, profile: newUserObj });
-
 		const result = await currentSession.save();
+		await sendNotificationToUser(req.user, newUserObj.email);
 		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
@@ -212,8 +244,7 @@ const setUserPayment = async (req, res) => {
 
 		// check if new payment is valid
 		participant.payed = payment;
-		if (currentSession.totalPayed > currentSession.totalCost)
-			return res.status(400).json(ERR_INVALID_VALUE);
+		if (currentSession.totalPayed > currentSession.totalCost) return res.status(400).json(ERR_INVALID_VALUE);
 
 		// validate payment
 		const result = await currentSession.save();
@@ -237,8 +268,7 @@ const endSession = async (req, res) => {
 		if (!currentSession) return res.status(404).json(ERR_SESSION_NOT_FOUND);
 
 		// check if the payment is valid
-		if (currentSession.totalPayed !== currentSession.totalCost)
-			return res.status(400).json(ERR_PAYMENT_INVALID);
+		if (currentSession.totalPayed !== currentSession.totalCost) return res.status(400).json(ERR_PAYMENT_INVALID);
 
 		if (endDate < currentSession.creationDate) return res.status(400).json(ERR_INVALID_VALUE);
 
@@ -264,13 +294,13 @@ const endSession = async (req, res) => {
 
 const queryUsers = async (req, res) => {
 	const query = req.query.q;
-	try{
+	try {
 		const users = await admin.queryUsers(query);
 		return res.status(200).json(users);
-	} catch (e){
+	} catch (e) {
 		return res.status(500).json(e);
 	}
-}
+};
 
 module.exports = {
 	findOpenSessionByEmail,

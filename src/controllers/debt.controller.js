@@ -31,7 +31,7 @@ const sendNotificationToUser = async (sender, receiver, deadline) => {
 		}
 
 		const deviceAssoc = await DeviceModel.findOne({ userEmail: receiver }).exec();
-		
+
 		// if the user doesn't have a registrationToken associated return
 		if (!deviceAssoc) return;
 
@@ -40,7 +40,7 @@ const sendNotificationToUser = async (sender, receiver, deadline) => {
 			title: 'Payment deadline',
 			body: `${displayName} wants you to pay until ${timeline}`
 		};
-		await sendNotification(registrationToken, notification);
+		await sendNotification(registrationToken, notification, { screen: 'debts' });
 	} catch (e) {
 		console.log(e);
 	}
