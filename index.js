@@ -8,6 +8,8 @@ const { ERR_IDTOKEN } = require('./src/helpers/errors');
 const WebSocket = require('ws');
 const http = require('http');
 
+const SocketManager = require('./src/helpers/SocketManager');
+
 // environment variables
 require('dotenv').config();
 
@@ -18,6 +20,8 @@ app.use(bodyParser.json());
 
 // basic request logger
 app.use(logger);
+
+let socketManager = new SocketManager();
 
 // IDToken authentification
 app.use(async (req, res, next) => {
@@ -32,6 +36,8 @@ app.use(async (req, res, next) => {
 	// save new user property in request object
 	req.user = user;
 
+	// save the socket manager object to notify session participants on changes
+	req.socketManager = socketManager;
 	next();
 });
 
@@ -41,23 +47,16 @@ app.use(rootRouter, sessionRouter, productRouter, debtRouter, historyRouter, dev
 // initialize server
 const server = http.createServer(app);
 
-let users = {};
-
 // initialize web-socket
 const wss = new WebSocket.Server({ server });
 wss.on('connection', (ws) => {
 	let user;
 	ws.on('message', async (IDToken) => {
 		user = await admin.authIDToken(IDToken);
-		if (user) users[user.email] = ws;
-		console.log(users);
+		if (user) socketManager.add(user.email, ws);
 	});
 	ws.on('close', (code, reason) => {
-		if (user) {
-			console.log('closing for', user.email);
-			delete users[user.email];
-			console.log(users);
-		}
+		if (user) socketManager.remove(user.email);
 	});
 });
 

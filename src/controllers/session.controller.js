@@ -170,6 +170,10 @@ const addUserToSession = async (req, res) => {
 		currentSession.participants.push({ email: newUser, payed: 0, profile: newUserObj });
 		const result = await currentSession.save();
 		await sendNotificationToUser(req.user, newUserObj.email);
+		req.socketManager.notify(
+			currentSession.participants.filter((participant) => participant.email !== req.user.email)
+		);
+
 		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
@@ -216,6 +220,11 @@ const removeUserFromSession = async (req, res) => {
 		if (currentSession.participants.length === 0)
 			result = await SessionModel.findByIdAndDelete(currentSession._id).exec();
 		else result = await currentSession.save();
+		req.socketManager.notify(
+			currentSession.participants
+				.concat({ email: participantEmail })
+				.filter((participant) => participant.email !== req.user.email)
+		);
 		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
@@ -248,6 +257,9 @@ const setUserPayment = async (req, res) => {
 
 		// validate payment
 		const result = await currentSession.save();
+		req.socketManager.notify(
+			currentSession.participants.filter((participant) => participant.email !== req.user.email)
+		);
 		res.status(200).json(result);
 	} catch (err) {
 		if (err.name === 'ValidationError') res.status(400).json(err);
@@ -285,6 +297,9 @@ const endSession = async (req, res) => {
 		// end session by setting the endDate
 		currentSession.endDate = endDate;
 		const result = await currentSession.save();
+		req.socketManager.notify(
+			currentSession.participants.filter((participant) => participant.email !== req.user.email)
+		);
 		res.status(200).json(result);
 	} catch (err) {
 		if (err.name === 'ValidationError') res.status(400).json(err);

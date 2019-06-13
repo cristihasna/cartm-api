@@ -56,8 +56,10 @@ exports.addProductToSession = async (req, res) => {
 			participant.debt = cost;
 		}
 		const result = await currentSession.save();
+		req.socketManager.notify(currentSession.participants.filter(participant => participant.email !== req.user.email));
 		res.status(200).json(result.populate());
 	} catch (err) {
+		console.log(err);
 		res.status(500).json(err);
 	}
 };
@@ -98,6 +100,7 @@ exports.patchProductInstance = async (req, res) => {
 			participant.debt = getTotalCost(participant.email, currentSession.products);
 		await currentSession.save();
 		currentSession = await findOpenSessionByEmail(sessionEmail);
+		req.socketManager.notify(currentSession.participants.filter(participant => participant.email !== req.user.email));
 		res.status(200).json(currentSession);
 	} catch (err) {
 		res.status(500).json(err);
@@ -131,6 +134,7 @@ exports.removeProductFromSession = async (req, res) => {
 			participant.debt = getTotalCost(participant.email, currentSession.products);
 
 		const result = await currentSession.save();
+		req.socketManager.notify(currentSession.participants.filter(participant => participant.email !== req.user.email));
 		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
@@ -171,6 +175,7 @@ exports.addParticipantToProduct = async (req, res) => {
 			participant.debt = getTotalCost(participant.email, currentSession.products);
 
 		const result = await currentSession.save();
+		req.socketManager.notify(currentSession.participants.filter(participant => participant.email !== req.user.email));
 		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
@@ -210,6 +215,7 @@ exports.removeParticipantFromProduct = async (req, res) => {
 		for (let participant of currentSession.participants)
 			participant.debt = getTotalCost(participant.email, currentSession.products);
 		const result = await currentSession.save();
+		req.socketManager.notify(currentSession.participants.filter(participant => participant.email !== req.user.email));
 		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
