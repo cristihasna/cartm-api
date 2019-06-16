@@ -9,6 +9,9 @@ const {
 	removeUserFromSession,
 	queryUsers
 } = require('../controllers/session.controller');
+
+const {processReceipt} = require('../controllers/receipt.controller');
+
 const router = express.Router();
 
 router.get('/sessions/', getAllSessions);
@@ -26,5 +29,7 @@ router.delete('/sessions/:sessionEmail/participants/:userEmail', removeUserFromS
 router.post('/sessions/:sessionEmail/participants/:userEmail/payment', setUserPayment);
 
 router.get('/users', queryUsers);
+
+router.post('/receipts', processReceipt);
 
 module.exports = router;

@@ -6,7 +6,7 @@ will print headers, query, params and body
 module.exports = (req, res, next) => {
 	const getFormattedValue = (value) => {
 		if (value === null) return null;
-		value = value.toString();
+		value = JSON.stringify(value);
 		if (value.length <= 50) return value;
 		return value.substr(0, 40) + '...' + value.substr(value.length - 7);
 	};

@@ -19,6 +19,8 @@ const getProductObj = async (barcode, name, productID) => {
 	return product;
 };
 
+exports.getProductObj = getProductObj;
+
 exports.addProductToSession = async (req, res) => {
 	const sessionEmail = req.params.sessionEmail;
 
@@ -56,7 +58,9 @@ exports.addProductToSession = async (req, res) => {
 			participant.debt = cost;
 		}
 		const result = await currentSession.save();
-		req.socketManager.notify(currentSession.participants.filter(participant => participant.email !== req.user.email));
+		req.socketManager.notify(
+			currentSession.participants.filter((participant) => participant.email !== req.user.email)
+		);
 		res.status(200).json(result.populate());
 	} catch (err) {
 		console.log(err);
@@ -100,7 +104,9 @@ exports.patchProductInstance = async (req, res) => {
 			participant.debt = getTotalCost(participant.email, currentSession.products);
 		await currentSession.save();
 		currentSession = await findOpenSessionByEmail(sessionEmail);
-		req.socketManager.notify(currentSession.participants.filter(participant => participant.email !== req.user.email));
+		req.socketManager.notify(
+			currentSession.participants.filter((participant) => participant.email !== req.user.email)
+		);
 		res.status(200).json(currentSession);
 	} catch (err) {
 		res.status(500).json(err);
@@ -134,7 +140,9 @@ exports.removeProductFromSession = async (req, res) => {
 			participant.debt = getTotalCost(participant.email, currentSession.products);
 
 		const result = await currentSession.save();
-		req.socketManager.notify(currentSession.participants.filter(participant => participant.email !== req.user.email));
+		req.socketManager.notify(
+			currentSession.participants.filter((participant) => participant.email !== req.user.email)
+		);
 		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
@@ -175,7 +183,9 @@ exports.addParticipantToProduct = async (req, res) => {
 			participant.debt = getTotalCost(participant.email, currentSession.products);
 
 		const result = await currentSession.save();
-		req.socketManager.notify(currentSession.participants.filter(participant => participant.email !== req.user.email));
+		req.socketManager.notify(
+			currentSession.participants.filter((participant) => participant.email !== req.user.email)
+		);
 		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
@@ -215,7 +225,9 @@ exports.removeParticipantFromProduct = async (req, res) => {
 		for (let participant of currentSession.participants)
 			participant.debt = getTotalCost(participant.email, currentSession.products);
 		const result = await currentSession.save();
-		req.socketManager.notify(currentSession.participants.filter(participant => participant.email !== req.user.email));
+		req.socketManager.notify(
+			currentSession.participants.filter((participant) => participant.email !== req.user.email)
+		);
 		res.status(200).json(result);
 	} catch (err) {
 		res.status(500).json(err);
@@ -231,7 +243,10 @@ exports.searchProductByName = async (req, res) => {
 		let regex = new RegExp(query, 'i');
 		// const results = await ProductModel.find({ name: regex }).exec();
 		const product = await ProductModel.findOne({ name: regex }).exec();
-		const productInstance = await ProductInstanceModel.findOne({ product: product._id }, 'product unitPrice').sort('-_id').populate('product').exec();
+		const productInstance = await ProductInstanceModel.findOne({ product: product._id }, 'product unitPrice')
+			.sort('-_id')
+			.populate('product')
+			.exec();
 		return res.status(200).json(productInstance);
 	} catch (e) {
 		return res.status(200).json(null);
