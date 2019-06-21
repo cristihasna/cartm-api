@@ -22,10 +22,12 @@ router.post('/sessions/:sessionEmail/create', createSession);
 
 router.post('/sessions/:sessionEmail/end', endSession);
 
+// change to /sessions/:sesionEmail/participants/:userEmail
 router.post('/sessions/:sessionEmail/participants/', addUserToSession);
 
 router.delete('/sessions/:sessionEmail/participants/:userEmail', removeUserFromSession);
 
+//change to PATCH to /sessions/:sessionEmail/participants/:userEmail
 router.post('/sessions/:sessionEmail/participants/:userEmail/payment', setUserPayment);
 
 router.get('/users', queryUsers);

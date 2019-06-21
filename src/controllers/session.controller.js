@@ -280,7 +280,7 @@ const endSession = async (req, res) => {
 		if (!currentSession) return res.status(404).json(ERR_SESSION_NOT_FOUND);
 
 		// check if the payment is valid
-		if (currentSession.totalPayed !== currentSession.totalCost) return res.status(400).json(ERR_PAYMENT_INVALID);
+		if (currentSession.totalPayed.toFixed(2) !== currentSession.totalCost.toFixed(2)) return res.status(400).json(ERR_PAYMENT_INVALID);
 
 		if (endDate < currentSession.creationDate) return res.status(400).json(ERR_INVALID_VALUE);
 

@@ -20,7 +20,7 @@ exports.ERR_FORBIDDEN_FOR_USER = {
 };
 exports.ERR_USER_NOT_FOUND = {
 	name: 'AuthorizationError',
-	message: 'Specified user not found, or could not be selecteed'
+	message: 'Specified user not found, or could not be selected'
 };
 exports.ERR_INVALID_VALUE = {
 	name: 'ValueError',
